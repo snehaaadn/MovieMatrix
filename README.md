@@ -60,11 +60,11 @@ You need to have [Node.js](https://nodejs.org/) (version 14 or later) and npm in
 3.  **Set up your TMDB API Key:**
     -   Sign up for a free account at [The Movie Database (TMDB)](https://www.themoviedb.org/signup).
     -   Go to your account settings, find the "API" section, and generate a new API key.
-    -   In the project, navigate to the `src/pages/` directory. You will need to replace the placeholder API key in both `HomePage.jsx` and `MovieDetailsPage.jsx`.
+    -   In the project's root folder, navigate to the `.env` file. You will need to replace the placeholder API key in the file.
 
-    Find this line in both files:
+    Find this line:
     ```javascript
-    const TMDB_API_KEY = 'YOUR_TMDB_API_KEY';
+    VITE_TMDB_API_KEY=YOUR_TMDB_API_KEY
     ```
     And replace `'YOUR_TMDB_API_KEY'` with your actual TMDB API key.
 
@@ -73,6 +73,8 @@ You need to have [Node.js](https://nodejs.org/) (version 14 or later) and npm in
     npm run dev
     ```
     The application will now be running on `http://localhost:5173` (or the next available port).
+
+Or You can also check the website here: [Live Demo](https://movie-matrix-lilac.vercel.app/)
 
 ---
 
