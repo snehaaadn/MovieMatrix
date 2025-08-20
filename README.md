@@ -32,6 +32,7 @@ This project is built using a modern and powerful set of technologies:
 -   **Styling:** [Tailwind CSS](https://tailwindcss.com/)
 -   **API:** [The Movie Database (TMDB) API](https://www.themoviedb.org/documentation/api)
 -   **Build Tool:** [Vite](https://vitejs.dev/)
+-   **Deployment:** [Vercel](https://vercel.com/)
 
 ---
 
