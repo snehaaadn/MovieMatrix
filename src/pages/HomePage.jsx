@@ -21,8 +21,8 @@ function HomePage({ onMovieSelect, page, setPage }) {
   const [selectedYear, setSelectedYear] = useState('');
 
   // free API key from The Movie Database (TMDB)
-  const TMDB_API_KEY = '1b590b2e07b698b9ce11d7332db21493';
-  const TMDB_API_BASE_URL = 'https://api.themoviedb.org/3';
+  const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
+  const TMDB_API_BASE_URL = import.meta.env.VITE_TMDB_API_BASE_URL;
 
   const fetchMovies = useCallback(async () => {
     setLoading(true);
