@@ -7,7 +7,9 @@ import FilterDropdown from "../components/FilterDropdown";
 import LoadingSpinner from '../components/LoadingSpinner';
 import ErrorMessage from '../components/ErrorMessage';
 import Hero from '../components/Hero';
+import VibeSearch from '../components/VibeSearch';
 import SearchIcon from '../components/icons/SearchIcon';
+import { fetchVibeMovies } from '../services/vibeSearch';
 
 function HomePage({ onMovieSelect, page, setPage }) {
   const [movies, setMovies] = useState([]);
@@ -19,8 +21,11 @@ function HomePage({ onMovieSelect, page, setPage }) {
   const [genres, setGenres] = useState([]);
   const [selectedGenre, setSelectedGenre] = useState('');
   const [selectedYear, setSelectedYear] = useState('');
+  const [searchMode, setSearchMode] = useState('browse');
+  const [vibeQuery, setVibeQuery] = useState('');
+  const [vibeExplanation, setVibeExplanation] = useState('');
+  const [vibeSource, setVibeSource] = useState(null);
 
-  // free API key from The Movie Database (TMDB)
   const TMDB_API_KEY = import.meta.env.VITE_TMDB_API_KEY;
   const TMDB_API_BASE_URL = import.meta.env.VITE_TMDB_API_BASE_URL;
 
@@ -48,7 +53,29 @@ function HomePage({ onMovieSelect, page, setPage }) {
     } finally {
       setLoading(false);
     }
-  }, [page, searchTerm, selectedGenre, selectedYear]);
+  }, [page, searchTerm, selectedGenre, selectedYear, TMDB_API_KEY, TMDB_API_BASE_URL]);
+
+  const fetchVibeResults = useCallback(async () => {
+    if (!vibeQuery) return;
+
+    setLoading(true);
+    setError(null);
+
+    try {
+      const data = await fetchVibeMovies(vibeQuery, page);
+      setMovies(data.movies);
+      setTotalPages(data.totalPages);
+      setVibeExplanation(data.explanation);
+      setVibeSource(data.source);
+    } catch (err) {
+      setError(err.message);
+      setMovies([]);
+      setVibeExplanation('');
+      setVibeSource(null);
+    } finally {
+      setLoading(false);
+    }
+  }, [page, vibeQuery]);
 
   useEffect(() => {
     const fetchGenres = async () => {
@@ -68,33 +95,54 @@ function HomePage({ onMovieSelect, page, setPage }) {
       }
     };
 
-    if (TMDB_API_KEY !== 'YOUR_TMDB_API_KEY_HERE') {
+    if (TMDB_API_KEY && TMDB_API_KEY !== 'YOUR_TMDB_API_KEY' && TMDB_API_KEY !== 'YOUR_TMDB_API_KEY_HERE') {
       fetchGenres();
     }
-  }, []);
-
+  }, [TMDB_API_KEY, TMDB_API_BASE_URL]);
 
   useEffect(() => {
-    if (TMDB_API_KEY === 'YOUR_TMDB_API_KEY_HERE') {
-      setError('Please replace "YOUR_TMDB_API_KEY_HERE" with your actual TMDB API key.');
+    if (!TMDB_API_KEY || TMDB_API_KEY === 'YOUR_TMDB_API_KEY' || TMDB_API_KEY === 'YOUR_TMDB_API_KEY_HERE') {
+      setError('TMDB API key missing. Add VITE_TMDB_API_KEY to your .env file, then restart the dev server (npm run dev).');
       setLoading(false);
       return;
     }
-    fetchMovies();
-  }, [fetchMovies, TMDB_API_KEY]);
 
+    if (!TMDB_API_BASE_URL) {
+      setError('TMDB base URL missing. Add VITE_TMDB_API_BASE_URL=https://api.themoviedb.org/3 to your .env file, then restart the dev server.');
+      setLoading(false);
+      return;
+    }
 
-  // Handlers
+    if (searchMode === 'vibe') {
+      fetchVibeResults();
+    } else {
+      fetchMovies();
+    }
+  }, [searchMode, fetchMovies, fetchVibeResults, TMDB_API_KEY]);
+
   const handleSearch = (e) => {
     e.preventDefault();
     setPage(1);
+    setSearchMode('title');
     const formData = new FormData(e.target);
     const newSearchTerm = formData.get('search');
     setSearchTerm(newSearchTerm);
+    setVibeQuery('');
+    setVibeExplanation('');
+    setVibeSource(null);
     if (newSearchTerm) {
       setSelectedGenre('');
       setSelectedYear('');
     }
+  };
+
+  const handleVibeSearch = (query) => {
+    setPage(1);
+    setSearchMode('vibe');
+    setVibeQuery(query);
+    setSearchTerm('');
+    setSelectedGenre('');
+    setSelectedYear('');
   };
 
   const handlePageChange = (newPage) => {
@@ -105,14 +153,22 @@ function HomePage({ onMovieSelect, page, setPage }) {
   };
 
   const handleGenreChange = (e) => {
+    setSearchMode('browse');
     setSelectedGenre(e.target.value);
     setSearchTerm('');
+    setVibeQuery('');
+    setVibeExplanation('');
+    setVibeSource(null);
     setPage(1);
   };
 
   const handleYearChange = (e) => {
+    setSearchMode('browse');
     setSelectedYear(e.target.value);
     setSearchTerm('');
+    setVibeQuery('');
+    setVibeExplanation('');
+    setVibeSource(null);
     setPage(1);
   };
 
@@ -122,6 +178,16 @@ function HomePage({ onMovieSelect, page, setPage }) {
     yearOptions.push(year);
   }
 
+  const sectionTitle = searchMode === 'vibe'
+    ? 'Vibe Results'
+    : searchTerm
+      ? `Results for "${searchTerm}"`
+      : 'Explore Movies';
+
+  const sectionSubtitle = searchMode === 'vibe'
+    ? 'Movies matched to your mood by GenAI'
+    : 'Find your next favorite film from our vast collection.';
+
   return (
     <div className="min-h-screen bg-gray-100 dark:bg-[#10002b] text-gray-900 dark:text-gray-100 font-sans transition-colors duration-500 flex flex-col">
 
@@ -130,22 +196,31 @@ function HomePage({ onMovieSelect, page, setPage }) {
       <Hero movies={heroMovies} />
 
       <main id="movies" className="container mx-auto px-4 py-8 flex-grow">
+        <VibeSearch
+          onVibeSearch={handleVibeSearch}
+          loading={loading && searchMode === 'vibe'}
+          explanation={vibeExplanation}
+          source={vibeSource}
+          vibeQuery={vibeQuery}
+        />
+
         <div className="flex flex-col md:flex-row justify-between items-center mb-12 gap-4">
           <div className="text-center md:text-left">
-            <h2 className="text-4xl font-bold hover:scale-105 transition-transform duration-300">Explore Movies</h2>
-            <p className="text-lg text-gray-500 dark:text-gray-400 mt-2 hover:scale-105 transition-transform duration-300">Find your next favorite film from our vast collection.</p>
+            <h2 className="text-4xl font-bold hover:scale-105 transition-transform duration-300">{sectionTitle}</h2>
+            <p className="text-lg text-gray-500 dark:text-gray-400 mt-2 hover:scale-105 transition-transform duration-300">{sectionSubtitle}</p>
           </div>
           <div className="flex items-center space-x-2 sm:space-x-4">
-            <FilterDropdown options={genres.map(g => ({ value: g.id, label: g.name }))} 
-              value={selectedGenre} onChange={handleGenreChange} 
-              placeholder="All Genres" 
+            <FilterDropdown options={genres.map(g => ({ value: g.id, label: g.name }))}
+              value={selectedGenre} onChange={handleGenreChange}
+              placeholder="All Genres"
+              disabled={searchMode === 'vibe'}
             />
 
-            <FilterDropdown options={yearOptions.map(y => ({ value: y, label: y }))} value={selectedYear} onChange={handleYearChange} placeholder="All Years" />
+            <FilterDropdown options={yearOptions.map(y => ({ value: y, label: y }))} value={selectedYear} onChange={handleYearChange} placeholder="All Years" disabled={searchMode === 'vibe'} />
 
             <div className="flex items-center space-x-2 sm:space-x-4">
               <form onSubmit={handleSearch} className="relative">
-                <input type="text" name="search" placeholder="Search..." className="w-24 sm:w-40 pl-4 pr-12 py-2 rounded-full border-2 border-gray-300 dark:border-gray-600 bg-gray-200 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-[#5a189a] focus:border-transparent transition-all duration-300" />
+                <input type="text" name="search" placeholder="Search by title..." defaultValue={searchTerm} className="w-24 sm:w-40 pl-4 pr-12 py-2 rounded-full border-2 border-gray-300 dark:border-gray-600 bg-gray-200 dark:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-[#5a189a] focus:border-transparent transition-all duration-300" />
                 <button type="submit" className="absolute right-1.5 top-1/2 -translate-y-1/2 p-2 rounded-full bg-[#5a189a] dark:bg-[#7b2cbf] text-white hover:bg-[#9d4edd] transition-colors duration-300">
                   <SearchIcon />
                 </button>

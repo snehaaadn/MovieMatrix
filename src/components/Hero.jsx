@@ -2,7 +2,10 @@ const Hero = ({ movies }) => {
     if (!movies || movies.length === 0) return null;
 
     const movieMarquee = [...movies, ...movies];
-    const backgroundImageUrl = `https://image.tmdb.org/t/p/original${movies[6].backdrop_path}`;
+    const backdropMovie = movies.find((m) => m.backdrop_path) || movies[0];
+    if (!backdropMovie?.backdrop_path) return null;
+
+    const backgroundImageUrl = `https://image.tmdb.org/t/p/original${backdropMovie.backdrop_path}`;
 
     return (
         <section id="home" className="relative w-full h-screen py-16 md:py-24 text-center overflow-hidden">
@@ -18,7 +21,7 @@ const Hero = ({ movies }) => {
                     </h2>
 
                     <p className="text-2xl text-gray-900 dark:text-white mb-5 animate-fade-in-up transition-transform duration-300 hover:scale-105" style={{ animationDelay: '0.2s' }}>
-                        Explore the world of cinema
+                        Explore cinema — or describe a vibe and let AI find your film
                     </p>
 
                     <a 

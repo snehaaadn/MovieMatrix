@@ -57,3 +57,14 @@ html {
     width: calc(14rem * 24);
     animation: scroll 38s linear infinite;
 }
+
+@keyframes shimmer {
+    0% { background-position: -200% 0; }
+    100% { background-position: 200% 0; }
+}
+
+.animate-shimmer {
+    background: linear-gradient(90deg, transparent, rgba(199, 125, 255, 0.15), transparent);
+    background-size: 200% 100%;
+    animation: shimmer 2.5s infinite;
+}

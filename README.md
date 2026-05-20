@@ -13,6 +13,7 @@ MovieMatrix is a sleek and modern web application for discovering movies. Built 
 
 ## ✨ Features
 
+-   **GenAI Vibe Search:** Describe a mood in natural language (e.g. *"cozy rainy night thriller"*) and GPT-4o-mini translates it into TMDB discover parameters — no title needed.
 -   **Hero Section:** A visually appealing hero section featuring top-rated movies in a scrolling marquee.
 -   **Movie Discovery:** Browse through the most popular movies with a clean, grid-based layout.
 -   **Advanced Search:** Instantly search for any movie by title.
@@ -30,9 +31,10 @@ This project is built using a modern and powerful set of technologies:
 
 -   **Frontend:** [React](https://reactjs.org/)
 -   **Styling:** [Tailwind CSS](https://tailwindcss.com/)
+-   **GenAI:** [OpenAI GPT-4o-mini](https://platform.openai.com/) (vibe → TMDB query translation)
 -   **API:** [The Movie Database (TMDB) API](https://www.themoviedb.org/documentation/api)
 -   **Build Tool:** [Vite](https://vitejs.dev/)
--   **Deployment:** [Vercel](https://vercel.com/)
+-   **Deployment:** [Vercel](https://vercel.com/) (serverless `/api/vibe-search`)
 
 ---
 
@@ -57,16 +59,19 @@ You need to have [Node.js](https://nodejs.org/) (version 14 or later) and npm in
     npm install
     ```
 
-3.  **Set up your TMDB API Key:**
-    -   Sign up for a free account at [The Movie Database (TMDB)](https://www.themoviedb.org/signup).
-    -   Go to your account settings, find the "API" section, and generate a new API key.
-    -   In the project's root folder, navigate to the `.env` file. You will need to replace the placeholder API key in the file.
+3.  **Set up environment variables:**
+    -   Copy `.env.example` to `.env`
+    -   Sign up for a free account at [The Movie Database (TMDB)](https://www.themoviedb.org/signup) and add your API key
+    -   *(Optional but recommended for GenAI demo)* Add an [OpenAI API key](https://platform.openai.com/api-keys) as `OPENAI_API_KEY`
 
-    Find this line:
-    ```javascript
-    VITE_TMDB_API_KEY=YOUR_TMDB_API_KEY
+    ```bash
+    cp .env.example .env
     ```
-    And replace `'YOUR_TMDB_API_KEY'` with your actual TMDB API key.
+
+    ```env
+    VITE_TMDB_API_KEY=your_tmdb_key
+    OPENAI_API_KEY=your_openai_key   # optional — demo mode works without it
+    ```
 
 4.  **Run the development server:**
     ```bash
@@ -83,15 +88,23 @@ Or You can also check the website here: [Live Demo](https://movie-matrix-lilac.v
 The project is organized with a clean and scalable structure to separate concerns effectively.
 
 ```
+/api
+|-- vibe-search.js  # Vercel serverless — GenAI vibe → TMDB discover
+/lib
+|-- vibeSearch.js   # OpenAI parsing + TMDB query builder
 /src
-|-- /assets         # Static assets like images and SVGs
-|-- /components     # Reusable UI components (Header, Footer, SearchIcon, MovieCard, etc.)
-|-- /pages          # Top-level page components (HomePage, MovieDetailsPage)
-|-- /routes         # Routing logic for the application
-|-- App.jsx         # Main application component
-|-- index.css       # Global styles and Tailwind CSS imports
-|-- main.jsx        # Entry point of the React application
+|-- /components     # UI (VibeSearch, MovieCard, Header, etc.)
+|-- /pages          # HomePage, MovieDetailsPage
+|-- /services       # Client API helpers (vibeSearch.js)
+|-- /routes         # App routing
 ```
+
+### How Vibe Search Works
+
+1. User describes a mood in the **Vibe Search** panel
+2. `POST /api/vibe-search` sends the query to **GPT-4o-mini**, which returns structured TMDB discover params (genres, era, sort order)
+3. The server fetches matching movies from TMDB and returns results + an AI explanation
+4. Without `OPENAI_API_KEY`, a keyword-based demo mode still runs so you can preview the UX locally
 
 ---
 
